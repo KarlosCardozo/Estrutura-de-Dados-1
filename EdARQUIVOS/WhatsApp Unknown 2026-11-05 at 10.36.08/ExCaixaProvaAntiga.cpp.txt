@@ -1,0 +1,257 @@
+/*
+
+3) (Listas Dinâmicas e Recursividade) Suponha que o "Abelito's Market" deva ser
+informatizado com o funcionamento de vários caixas que precisam ser inicializados
+no inicio do dia (o gerente especifica a quantidade neste momento). E, a partir dai:
+a. (1,0) Quando um "caixa for aberto", o sistema "cria um novo nó numa estrutura
+duplamente encadeada" e o insere de forma ordenada pelo nome do atendente;
+b. (1,5) Quando um cliente passar pelo caixa com suas compras, o sistema cria um
+nó para representá-lo, armazenando os itens comprados a partir desse nó (cauxai.
+A inserção deve ocorrer sempre no final dessa lista;
+c. (2,0) Quando o caixa finaliza a compra de um cliente, o sistema deve gerar a
+listagem da mesma, varrendo todos os itens adquiridos e, ao final, indicar o valor
+total gasto. Este valor total gasto deve ser guardado dentro do nó deste
+atendimento (a lista de itens adquiridos deve ser eliminada após o pagamento);
+Esta função deve ser RECURSIVA.
+
+
+
+*/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+
+struct TpItem{
+	char nome[50];
+	float preco;
+	TpItem *prox;
+};
+
+struct TpCliente{
+	char nome[50];
+	TpItem *itensComprados;
+	float totalGasto;
+	TpCliente *prox;
+};
+
+struct TpCaixa{
+	char nomeAtendente[50];
+	TpCliente *clientesAtendidos;
+	TpCaixa *prox;
+	TpCaixa *ant;
+};
+
+TpCaixa *NC_Caixa(char nomeAtendente[]){
+	TpCaixa *nc = new TpCaixa;
+	strcpy(nc->nomeAtendente, nomeAtendente);
+	nc->clientesAtendidos = NULL;
+	nc->prox = NULL;
+	nc->ant = NULL;
+}
+
+TpCliente *NC_Cliente(char nome[]){
+	TpCliente* nc = new TpCliente;
+	strcpy(nc->nome, nome);
+	nc->itensComprados = NULL;
+	nc->prox = NULL;
+	nc->totalGasto = 0;
+}
+
+TpItem *NC_Item(char nome[],float preco){
+	TpItem *nc = new TpItem;
+	strcpy(nc->nome,nome);
+	nc->prox = NULL;
+	nc->preco = preco;
+}
+
+TpCaixa *abrirCaixa(TpCaixa *caixas, char nomeAtendente[]){
+	TpCaixa *novoCaixa = NC_Caixa(nomeAtendente);
+	
+	if(caixas == NULL){
+		caixas = novoCaixa;
+	}else{
+		TpCaixa *atual = caixas;
+		
+		while(atual != NULL && strcmp(atual->nomeAtendente, nomeAtendente) < 0)
+			atual = atual->prox;
+		
+		if(atual != NULL){
+			if(atual->ant == NULL){
+				novoCaixa->prox = caixas;
+				caixas->ant = novoCaixa;
+				caixas = novoCaixa;
+			}else{
+				novoCaixa->prox = atual;
+				novoCaixa->ant = atual->ant;
+				if(atual->prox != NULL){
+					atual->prox->ant = novoCaixa;
+				}
+				atual = novoCaixa;
+			}
+		}
+	}
+	return caixas;
+}
+
+TpCaixa *buscarCaixaPorAtendente(TpCaixa *caixas, char nomeAtendente[]){
+	TpCaixa *atual = caixas;
+	while(atual != NULL && strcmp(atual->nomeAtendente, nomeAtendente) != 0)
+		atual = atual->prox;
+	return atual;
+}
+
+TpCaixa *adicionarCliente(TpCaixa *caixa, char nomeCliente[]){
+	TpCliente *novoCliente = NC_Cliente(nomeCliente);
+	
+	if(caixa->clientesAtendidos == NULL){
+		caixa->clientesAtendidos = novoCliente;
+	}else{
+		TpCliente *atual = caixa->clientesAtendidos;
+		while(atual->prox != NULL)
+			atual = atual->prox;
+		atual->prox = novoCliente;
+	}
+	return caixa;
+}
+
+
+TpCliente *adicionarItem(TpCliente *cliente, char nomeItem[], float preco){
+	TpItem *novoItem = NC_Item(nomeItem, preco);
+	
+	if(cliente->itensComprados == NULL){
+		cliente->itensComprados = novoItem;
+	}else{
+		TpItem *atual = cliente->itensComprados;
+		while(atual->prox != NULL)
+			atual = atual->prox;
+		atual->prox = novoItem;
+	}
+	return cliente;
+}
+
+
+
+float calcularTotal(TpItem *item){
+	if(item == NULL)
+		return 0;
+	else
+		return item->preco + calcularTotal(item->prox);
+}
+
+void liberarItens(TpItem *item){
+	if(item != NULL){
+		liberarItens(item->prox);
+		delete(item);
+	}
+}
+
+
+TpCaixa *finalizarCompra(TpCaixa *caixa, char nomeCliente[]) {
+    TpCliente *atual = caixa->clientesAtendidos;
+    TpCliente *anterior = NULL;
+
+    while (atual != NULL && strcmp(atual->nome, nomeCliente) != 0) {
+        anterior = atual;
+        atual = atual->prox;
+    }
+
+    if (atual != NULL) {
+        atual->totalGasto = calcularTotal(atual->itensComprados);
+        printf("Cliente: %s\n", atual->nome);
+        printf("Atendido por: %s\n", caixa->nomeAtendente);
+        printf("Itens comprados:\n");
+        TpItem *item = atual->itensComprados;
+        while (item != NULL) {
+            printf(" - %s: R$%.2f\n", item->nome, item->preco);
+            item = item->prox;
+        }
+        printf("Total gasto: R$%.2f\n", atual->totalGasto);
+
+        liberarItens(atual->itensComprados);
+        atual->itensComprados = NULL;
+
+        if (anterior == NULL) {
+            caixa->clientesAtendidos = caixa->clientesAtendidos->prox;
+        } else {
+            anterior->prox = atual->prox;
+        }
+        delete(atual);
+    } else {
+        printf("Cliente não encontrado!\n");
+    }
+    return caixa;
+}
+
+void processarCompras(TpCaixa *caixas){
+	char nomeAtendente[50], nomeCliente[50], nomeItem[50];
+    float preco;
+    
+    printf("\n### COMPRA ###");f
+    
+    printf("\nDigite o nome do atendente: ");
+    scanf("%s", nomeAtendente);
+    
+    TpCaixa *caixa = buscarCaixaPorAtendente(caixas, nomeAtendente);
+    if(caixa != NULL){
+    	printf("\nDigite o nome do cliente: ");
+	    scanf("%s", nomeCliente);
+	    
+	    caixa = adicionarCliente(caixa,nomeCliente);
+	    
+	    printf("\nDigite o nome do item (ou 'fim' para finalizar): ");
+	    scanf("%s", nomeItem);
+	    while(strcmp(nomeItem, "fim") == 0 || strcmp(nomeItem, "FIM") == 0){
+	    	printf("\nDigite o preço do item: ");
+	        scanf("%f", &preco);
+			
+			
+	    	
+	    	TpCliente *cliente = caixa->clientesAtendidos;
+            while (cliente->prox != NULL)
+                cliente = cliente->prox;
+                
+            cliente = adicionarItem(cliente, nomeItem, preco);
+            
+            
+            printf("\nDigite o nome do item (ou 'fim' para finalizar): ");
+	    	scanf("%s", nomeItem);
+		}
+    	caixa = finalizarCompra(caixa, nomeAtendente);
+	}
+    
+    
+    
+}
+
+int main() {
+    TpCaixa *caixas = NULL;
+
+    int n;
+    printf("Digite o número de caixas a serem abertos: ");
+    scanf("%d", &n);
+
+    for (int i = 0; i < n; ++i) {
+        char nomeAtendente[50];
+        printf("Digite o nome do atendente para o caixa %d: ", i + 1);
+        scanf("%s", nomeAtendente);
+        caixas = abrirCaixa(caixas, nomeAtendente);
+    }
+
+    while (1) {
+        processarCompras(caixas);
+        char continuar;
+        printf("Deseja continuar processando compras? (s/n): ");
+        scanf(" %c", &continuar);
+        if (continuar == 'n' || continuar == 'N') {
+            break;
+        }
+    }
+    
+
+    return 0;
+}
+

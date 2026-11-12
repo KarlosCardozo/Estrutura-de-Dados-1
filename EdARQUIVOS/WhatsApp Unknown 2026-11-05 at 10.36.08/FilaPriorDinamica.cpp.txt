@@ -1,0 +1,118 @@
+#include <stdio.h>
+#include <conio.h>
+#include <stdlib.h>
+
+// Estrutura do elemento
+struct TpElemento {
+    char Id;
+    int Prior;
+    TpElemento *ant, *prox;
+};
+
+// Estrutura do deque
+struct TpDEQUE {
+    TpElemento *Cab, *Cauda;
+};
+
+// Inicializar o deque
+void inicializarDeque(TpDEQUE &deque) {
+    deque.Cab = NULL;
+    deque.Cauda = NULL;
+}
+
+// Cria uma nova caixa (nodo) com o elemento dado
+TpElemento* CriaCaixa(char id, int prior) {
+    TpElemento *pCaixa = new TpElemento;
+    pCaixa->Id = id;
+    pCaixa->Prior = prior;
+    pCaixa->prox = NULL;
+    pCaixa->ant = NULL;
+    return pCaixa;
+}
+
+// Inserir um elemento na fila com prioridade
+void FPInserir(TpDEQUE &deque, char id, int prior) {
+    TpElemento *NovaCaixa = CriaCaixa(id, prior);
+    TpElemento *atual;
+
+    if (deque.Cab == NULL) {
+        deque.Cab = deque.Cauda = NovaCaixa;
+    } else {
+        if (deque.Cab->Prior > NovaCaixa->Prior) { // inserir antes do primeiro
+            NovaCaixa->prox = deque.Cab;
+            deque.Cab->ant = NovaCaixa;
+            deque.Cab = NovaCaixa;
+        } else {
+            atual = deque.Cab;
+            while (atual->prox != NULL && atual->prox->Prior <= prior) {
+                atual = atual->prox;
+            }
+            // atual aponta para o elemento após o qual NovaCaixa deve ser inserido.
+            NovaCaixa->prox = atual->prox;
+            if (atual->prox != NULL) { // se atual não é o último elemento da lista
+                atual->prox->ant = NovaCaixa; // elemento anterior é a nova caixa
+            } else {
+                deque.Cauda = NovaCaixa; // se for inserido no final, atualizar a cauda
+            }
+            atual->prox = NovaCaixa;
+            NovaCaixa->ant = atual;
+        }
+    }
+}
+
+// Retirar um elemento da fila com prioridade (o de maior prioridade)
+void FPRetirar(TpDEQUE &deque, TpElemento **ElementoRemovido) {
+    if (deque.Cab == NULL) {
+        *ElementoRemovido = NULL;
+        return;
+    }
+
+    TpElemento *remover = deque.Cab;
+    deque.Cab = deque.Cab->prox;
+    if (deque.Cab != NULL) {
+        deque.Cab->ant = NULL;
+    } else {
+        deque.Cauda = NULL; // se a lista ficou vazia, cauda também deve ser NULL
+    }
+    remover->prox = NULL; // Isolar o elemento removido
+    *ElementoRemovido = remover;
+}
+
+// Exibir a fila
+void ExibirFila(TpDEQUE deque) {
+    system("cls");
+    printf("\n### Elementos da Fila com Prioridade ###\n");
+    if (deque.Cab == NULL) {
+        printf("\nFila Vazia!");
+    } else {
+        TpElemento *atual = deque.Cab;
+        while (atual != NULL) {
+            printf("%c-%d ", atual->Id, atual->Prior);
+            atual = atual->prox;
+        }
+    }
+    getch();
+}
+
+int main(void) {
+    TpDEQUE deque;
+    inicializarDeque(deque);
+    TpElemento *Removido = NULL;
+
+    FPInserir(deque, 'A', 2);
+    FPInserir(deque, 'B', 1);
+    FPInserir(deque, 'C', 3);
+
+    ExibirFila(deque);
+
+    FPRetirar(deque, &Removido);
+    if (Removido != NULL) {
+        printf("\nElemento removido: %c-%d\n", Removido->Id, Removido->Prior);
+        delete Removido;
+    }
+
+    ExibirFila(deque);
+
+    return 0;
+}
+

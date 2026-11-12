@@ -1,0 +1,19 @@
+/*
+
+Desenvolva um programa que simule o acesso a filas de um supermercado qualquer, considerando que neste existem, no máximo, 4 caixas. 
+E que possa responder qual o tempo médio que uma pessoa leva para ser atendida nesse supermercado.
+
+Considerações:
+"	A cada 3 unidades de tempo uma pessoa chega ao Supermercado;
+"	O Supermercado pode utilizar menos caixas durante alguns dias da semana;
+"	O Caixa 1 atende uma pessoa a cada 5 unidades de tempo;
+"	O Caixa 2 atende uma pessoa a cada 2 unidades de tempo;
+"	O Caixa 3 atende uma pessoa a cada 4 unidades de tempo;
+"	O Caixa 4 atende uma pessoa a cada 7 unidades de tempo.
+
+
+Observação: Considere uma FILA, onde as gestantes têm maior prioridade, 
+os idosos têm prioridade intermediária e as outras pessoas têm prioridade baixa.
+
+
+*/

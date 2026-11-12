@@ -1,0 +1,468 @@
+/*
+
+3) (Listas Dinâmicas) A empresa de eventos desportivos "ZOBAIDO sports" necessita de urna aplicação para gerir Equipes e Jogadores.
+Informações:
+
+Equipe
+	Nome 
+	Nome do Treinador
+	15 jogadores (mínimo)
+		Jogador
+			Nome
+			RG
+			Idade
+			Número da camisa
+			Número de gols marcado
+			Equipes que jogou e em que ano
+
+
+Aplicação, totalmente dinâmica, deverá permitir:
+ Quando uma "equipe" for definida, o sistema "cria um novo nó numa estrutura
+duplamente encadeada" e o insere de forma ordenada pelo nome da Equipe e, em seguida,
+já conhece seus jogadores da seguinte forma:
+Quando um jogador com o seu histórico de equipes for cadastrado, o sistema cria um
+nó para representá-lo, vinculando-o a esta Equipe e armazenando o seu histórico a
+partir desse nó (a inserção sempre no final da lista), que será a última Equipe pela
+qual o Jogador esteve;
+ Quando uma Equipe for excluída, o sistema deve gerar a listagem de tudo o que
+pertence a mesma, varrendo todos os itens vinculados e, ao final, indicar a quantidade de
+Atletas que a mesma possui. Lembrando que todos os elementos vinculados a esta Equipe
+devem ser liberados da memória;
+Gerar relatório com os artilheiros de cada equipe;
+• Artilheiro: jogador da Equipe que mais gols fez no Campeonato/ Torneio. Em caso de
+empate, mostrar todos os jogadores com a mesma quantidade;
+
+Defina as estruturas de dados adequadas para a implementação com alocação dinâmica do
+eferido sistema e desenvolva subprogramas (funções com os devidos parâmetros) referentes aos
+refinamentos acima descritos.
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include<conio.h>
+
+struct TpHistorico {
+    struct TpEquipe* equipe;
+    int ano;
+    struct TpHistorico* prox;
+};
+
+// Estrutura para o Jogador
+struct TpJogador {
+    char nome[30];
+    char RG[30];
+    int idade;
+    int numCamisa;
+    int numGols;
+    struct TpHistorico* historico; // Lista de histórico das equipes que jogou
+    struct TpJogador* prox;
+};
+
+// Estrutura para a Equipe
+struct TpEquipe {
+    char nome[30];
+    char nomeTreinador[30];
+    struct TpJogador* jogadores; // Lista de jogadores
+    struct TpEquipe* ant;
+    struct TpEquipe* prox;
+};
+
+// Estrutura para descrever a lista de equipes
+struct TpDescritor {
+    struct TpEquipe* Inicio;
+    struct TpEquipe* Fim;
+    int qtde;
+};
+
+
+TpEquipe *NC_Equipe(char nome[], char nomeTreinador[]){
+	TpEquipe *novaCaixa = new TpEquipe;
+	strcpy(novaCaixa->nome, nome);
+	strcpy(novaCaixa->nomeTreinador, nomeTreinador);
+	novaCaixa->ant = NULL;
+	novaCaixa->prox = NULL;
+	novaCaixa->jogadores = NULL;
+	return novaCaixa;
+}
+
+TpJogador *NC_Jogador(char nome[], char rg[], int idade, int numCamisa, int numGols){
+	TpJogador *novaCaixa = new TpJogador;
+	strcpy(novaCaixa->nome, nome);
+	strcpy(novaCaixa->RG, rg);
+	novaCaixa->idade = idade;
+	novaCaixa->numGols = numGols;
+	novaCaixa->numCamisa = numCamisa;
+	novaCaixa->historico = NULL;
+	novaCaixa->prox = NULL;
+	return novaCaixa;
+}
+
+TpHistorico *NC_Historico(TpEquipe *equipe, int ano){
+	TpHistorico *novaCaixa = new TpHistorico;
+	novaCaixa->equipe = equipe;
+	novaCaixa->ano = ano;
+	novaCaixa->prox = NULL;
+	return novaCaixa;
+}
+
+
+void inicializarDescritor(TpDescritor &desc){
+	desc.qtde = 0;
+	desc.Fim = NULL;
+	desc.Inicio = NULL;
+}
+
+void inserirEquipeOrdenado(TpDescritor &desc, char nome[], char nomeTreinador[]){
+	TpEquipe *novaEquipe = NC_Equipe(nome, nomeTreinador);
+	TpEquipe *atual = desc.Inicio;
+	
+	if(atual == NULL){
+		desc.Inicio = desc.Fim = novaEquipe;
+	}else if(strcmp(nome, desc.Inicio->nome) < 0){
+		// inicio
+		novaEquipe->prox = desc.Inicio;
+		desc.Inicio->ant = novaEquipe;
+		desc.Inicio = novaEquipe;
+	}else if(strcmp(nome, desc.Fim->nome) > 0){
+		desc.Fim->prox = novaEquipe;
+		novaEquipe->ant = desc.Fim;
+		desc.Fim = novaEquipe;
+	}else{
+		atual = desc.Inicio;
+		while(atual-> prox != NULL && strcmp(atual->prox->nome, nome) < 0){
+			atual = atual-> prox;
+		}
+		novaEquipe->prox = atual->prox;
+		novaEquipe->ant = atual;
+		if(atual->prox != NULL){
+			atual->prox->ant = novaEquipe;
+		}
+		atual->prox = novaEquipe;
+	}
+	desc.qtde++;
+}
+
+TpEquipe *buscaEquipe(char nomeEquipe[], TpDescritor desc){
+	TpEquipe *atualEquipes = desc.Inicio;
+	while(atualEquipes != NULL && strcmp(atualEquipes->nome,nomeEquipe) != 0)
+		atualEquipes = atualEquipes->prox;
+	return atualEquipes;
+}
+
+TpHistorico *inserirHistoricoOrdenado(TpHistorico *historico, TpEquipe *equipe, int ano){
+	TpHistorico *novoH = NC_Historico(equipe, ano);
+	if(historico == NULL){
+		historico = novoH;
+	}else if(novoH->ano < historico->ano){
+		novoH->prox = historico;
+		historico = novoH;
+	}else{
+		TpHistorico *atual = historico;
+		TpHistorico *anterior = NULL;
+		while(atual->prox != NULL && atual->prox->ano < novoH->ano){
+			anterior = atual;
+			atual = atual -> prox;
+		}
+		novoH->prox = atual->prox;
+		anterior->prox = novoH;
+		atual->prox = novoH;
+	}
+	return historico;
+}
+
+TpEquipe *inserirJogadorEquipe(TpEquipe *equipe, TpJogador *jogador){
+	TpJogador *atual = equipe->jogadores;
+	if(atual == NULL){
+		equipe->jogadores = jogador;
+	}else{
+		while(atual->prox != NULL)
+			atual = atual -> prox;
+		atual->prox = jogador;
+	}
+	return equipe;
+}
+
+
+void *inserirNovaEquipe(TpDescritor &desc){
+	TpJogador *novoJogador;
+	TpEquipe *equipe, *equipeAtual;
+	TpHistorico *historico = NULL;
+	char nome[30], rg[30], jogou, nomeEquipe[30], nomeTreinador[30];
+	int idade, numCamisa, numGols,ano, numEquipes, numJogadores;
+	bool equipeExiste = false;
+	
+	printf("## NOVA EQUIPE ##\n");
+    printf("Nome da equipe: ");
+    gets(nomeEquipe);
+    printf("Nome do treinador: ");
+    gets(nomeTreinador);
+    
+    
+    equipeAtual = buscaEquipe(nomeEquipe, desc);
+   	if(equipeAtual == NULL){
+        inserirEquipeOrdenado(desc, nomeEquipe, nomeTreinador);
+        equipeAtual = buscaEquipe(nomeEquipe, desc);
+    } else {
+        printf("\nA equipe já existe!");
+        equipeExiste = true; 
+    }
+    
+    if(!equipeExiste){
+    	printf("Numero de jogadores: ");
+	    scanf("%d", &numJogadores);
+	    fflush(stdin);
+	    
+	    for (int i = 0; i < numJogadores; i++){
+	    	printf("\n\n## NOVO JOGADOR ##\n");
+			printf("\nNome do jogador %d: ", i + 1);
+			gets(nome);
+			printf("\nRG do jogador: ");
+			gets(rg);
+			printf("\nIdade do jogador: ");
+			scanf("%d",&idade);
+			fflush(stdin);
+			printf("\nNumero da camisa do jogador: ");
+			scanf("%d",&numCamisa);
+			fflush(stdin);
+			printf("\nNumero de gols do jogador: ");
+			scanf("%d",&numGols);
+			fflush(stdin);
+			
+			novoJogador = NC_Jogador(nome,rg,idade,numCamisa,numGols);
+			
+			printf("\nO jogador ja jogou em outras equipes anteriormente? [S / N]: ");
+			jogou = toupper(getch());
+			while(jogou != 'S' && jogou != 'N')
+				jogou = toupper(getch());
+			
+			if(toupper(jogou) == 'S'){
+				printf("\nDigite o numero de equipes que jogou anteriormente: ");
+				scanf("%d",&numEquipes);
+				fflush(stdin);
+				for(int j = 0; j < numEquipes; j++){
+					printf("\nDigite o nome da equipe %d: ", j+1);
+					gets(nomeEquipe);
+					equipe = buscaEquipe(nomeEquipe, desc);
+					if(equipe == NULL){
+						printf("\nDigite o nome do treinador desta equipe: ");
+						gets(nomeTreinador);
+						inserirEquipeOrdenado(desc, nomeEquipe, nomeTreinador);
+						equipe = buscaEquipe(nomeEquipe, desc);
+					}
+					printf("\nDigite o ano que jogou nesta equipe:");
+					scanf("%d", &ano);
+					fflush(stdin);
+					historico = inserirHistoricoOrdenado(historico, equipe, ano);
+					novoJogador->historico = historico;
+				}
+			}
+	
+			equipeAtual = inserirJogadorEquipe(equipeAtual, novoJogador);
+		}
+	}
+	
+}
+
+void exibirEquipes(TpDescritor desc) {
+    TpEquipe *atualEquipe = desc.Inicio;
+    while (atualEquipe != NULL) {
+        printf("\nEquipe: %s\n", atualEquipe->nome);
+        printf("Treinador: %s\n", atualEquipe->nomeTreinador);
+
+        
+        if (atualEquipe->jogadores != NULL) {
+            TpJogador *atualJogador = atualEquipe->jogadores;
+            printf("Jogadores:\n");
+            while (atualJogador != NULL) {
+                printf("\n\tNome: %s\n", atualJogador->nome);
+                printf("\tRG: %s\n", atualJogador->RG);
+                printf("\tIdade: %d\n", atualJogador->idade);
+                printf("\tNumero da camisa: %d\n", atualJogador->numCamisa);
+                printf("\tNumero de gols: %d\n", atualJogador->numGols);
+
+                
+                if (atualJogador->historico != NULL) {
+                    printf("\tHistorico de equipes anteriores:\n");
+                    TpHistorico *atualHistorico = atualJogador->historico;
+                    while (atualHistorico != NULL) {
+                        printf("\t\tEquipe: %s, Ano: %d\n", atualHistorico->equipe->nome, atualHistorico->ano);
+                        atualHistorico = atualHistorico->prox;
+                    }
+                }
+
+                atualJogador = atualJogador->prox;
+            }
+        } else {
+            printf("A equipe nao possui jogadores.\n");
+        }
+
+        atualEquipe = atualEquipe->prox;
+    }
+}
+
+void removerEquipe(TpDescritor &desc, char nomeEquipe[]){
+	TpEquipe *equipe = buscaEquipe(nomeEquipe, desc);
+	
+	if(equipe != NULL){
+		printf("\nRemovendo a equipe: %s\n", equipe->nome);
+    	printf("Treinador: %s\n", equipe->nomeTreinador);
+    	
+    	int numJogadores = 0;
+    	TpJogador *jogadorAtual = equipe->jogadores;
+    	while(jogadorAtual != NULL){
+    		printf("\n\tNome: %s\n", jogadorAtual->nome);
+	        printf("\tRG: %s\n", jogadorAtual->RG);
+	        printf("\tIdade: %d\n", jogadorAtual->idade);
+	        printf("\tNumero da camisa: %d\n", jogadorAtual->numCamisa);
+	        printf("\tNumero de gols: %d\n", jogadorAtual->numGols);
+	        
+	        if(jogadorAtual->historico != NULL){
+	        	printf("\tHistorico de equipes anteriores:\n");
+	        	TpHistorico *historicoAtual = jogadorAtual->historico;
+	        	while(historicoAtual != NULL){
+	        		printf("\t\tEquipe: %s, Ano: %d\n", historicoAtual->equipe->nome, historicoAtual->ano);
+                	historicoAtual = historicoAtual->prox;
+				}
+			}
+			numJogadores++;
+			jogadorAtual = jogadorAtual->prox;
+		}
+		printf("\nTotal de jogadores na equipe: %d\n", numJogadores);
+		
+		jogadorAtual = equipe->jogadores;
+		while(jogadorAtual != NULL){
+			TpJogador *proxJogador = jogadorAtual->prox;
+			
+			TpHistorico *historicoAtual = jogadorAtual->historico;
+			while(historicoAtual != NULL){
+				TpHistorico *proxHistorico = historicoAtual->prox;
+				delete(historicoAtual);
+				historicoAtual = proxHistorico;
+			}
+			
+			delete(jogadorAtual);
+			jogadorAtual = proxJogador;
+		}
+		
+		
+		if(equipe->ant != NULL){
+			equipe->ant->prox = equipe->prox;
+		}else{
+			desc.Inicio = equipe->prox;
+		}
+		
+		if(equipe->prox != NULL){
+			equipe->prox->ant = equipe->ant;
+		}else{
+			desc.Fim = equipe->ant;
+		}
+		
+		delete(equipe);
+		desc.qtde--;
+		
+		printf("\nEquipe removida com sucesso.\n");
+	}else{
+		printf("\nEquipe nao encontrada!\n");
+	}
+}
+
+void gerarRelatorioArtilheiros(TpDescritor desc){
+	TpEquipe *equipeAtual = desc.Inicio;
+	
+	printf("\n## Relatorio de Artilheiros ##\n");
+	
+	while(equipeAtual != NULL){
+		printf("\nEquipe: %s\n", equipeAtual->nome);
+		
+		if(equipeAtual->jogadores != NULL){
+			TpJogador *atualJogador = equipeAtual->jogadores;
+			TpJogador *artilheiro = atualJogador;
+			
+			int maxGols = atualJogador->numGols;
+			
+			while(atualJogador != NULL){
+				if(atualJogador->numGols > maxGols){
+					maxGols = atualJogador->numGols;
+					artilheiro = atualJogador;
+				}
+				atualJogador = atualJogador->prox;
+			}
+			
+			atualJogador = equipeAtual->jogadores;
+			printf("Artilheiro(s) com %d gol(s):\n", maxGols);
+			while(atualJogador != NULL){
+				if(atualJogador->numGols == maxGols){
+					printf("\tNome: %s\n", atualJogador->nome);
+                    printf("\tRG: %s\n", atualJogador->RG);
+                    printf("\tIdade: %d\n", atualJogador->idade);
+                    printf("\tNumero da camisa: %d\n", atualJogador->numCamisa);
+				}
+				atualJogador = atualJogador->prox;
+			}
+		}else{
+			printf("A equipe nao possui jogadores.\n");
+		}
+		equipeAtual = equipeAtual->prox;
+	}
+}
+
+
+int main() {
+    TpDescritor desc;
+    inicializarDescritor(desc);
+    char continuar;
+    int opcao;
+
+    do {
+        printf("\nMenu:\n");
+        printf("1. Inserir Nova Equipe\n");
+        printf("2. Exibir Equipes\n");
+        printf("3. Remover Equipe\n");
+        printf("4. Gerar Relatorio de Artilheiros\n");
+        printf("5. Sair\n");
+        printf("Escolha uma opcao: ");
+        scanf("%d", &opcao);
+        fflush(stdin);
+
+        switch (opcao) {
+            case 1:
+                inserirNovaEquipe(desc);
+                break;
+            case 2:
+                exibirEquipes(desc);
+                break;
+            case 3:
+                printf("Digite o nome da equipe a ser removida: ");
+                char nomeEquipe[30];
+                gets(nomeEquipe);
+                removerEquipe(desc, nomeEquipe);
+                break;
+            case 4:
+                gerarRelatorioArtilheiros(desc);
+                break;
+            case 5:
+                continuar = 'N';
+                break;
+            default:
+                printf("Opcao invalida. Tente novamente.\n");
+                break;
+        }
+
+        if (opcao != 5) {
+            printf("\nDeseja continuar no programa? (S/N): ");
+            scanf(" %c", &continuar);
+            fflush(stdin);
+        }
+    } while (continuar == 'S' || continuar == 's');
+
+    return 0;
+}
+
+
+
+
+
+
+

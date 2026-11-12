@@ -1,0 +1,376 @@
+/* Possoa
+Nome (HACHURADO)
+Endereco
+Cidade
+Estado
+Email
+
+Passagens
+NrPassagem (HACHURADO)
+CodVoo (FK)
+CPF (fk)
+DataCompra
+Poltrona
+
+Cidades
+CodCidade (HACHURADO)
+NomeCidade
+EstCidade
+
+Voos
+CodVoo (HACHURADO)
+NrLugares
+CodCidadeOrigem (FK)
+CodCidadeDestino (FK)
+
+Obs.: Os campos relativos à data são compostos por um registro de inteiros para
+armazenar dia, mês e ano, portanto, a data não é uma cadeia de caracteres; E os campos
+destacados (hachurados) são as chaves primárias. FK (Foreign Key) é chave estrangeira,
+ou seja, é uma chave primária em outra tabela.
+
+Programe, em C, módulos do sistema que gerem listas dinâmicas como índices de
+arquivos com as seguintes características:
+a) (3,5) Possibilite a leitura do arquivo binário VOOS e construa um índice no
+formato de uma lista ordenada que consiga vincular para cada Cidade de Origem
+do Voo, todos os Voos existentes. E vincule também, a cada Voo, todas as
+passagens vendidas para o mesmo (inserção tipo FILA). 
+Defina as estruturas de
+dados, mostre graficamente (desenho) a sua solução e implemente uma
+que armazene todos os dados envolvidos nas estruturas de dados definida.
+Observação: Guardar na lista dinâmica apenas as primárias e seus
+devidos vínculos (ponteiros). Qualquer detalhamento dos ados deve ser extraído
+dos arquivos.
+
+b) (2,5) Possibilite a exclusão De uma Cidade, devem-se excluir todos os Voos e as
+passagens vendidas;
+Observação: Excluir apenas em Lista.
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct TpData{
+	int dia, mes, ano;
+};
+
+struct TpCidade{
+	int codCidade;
+	char nomeCidade[30];
+	char EstCidade[30];
+};
+
+struct TpVoo{
+	int codVoo, nrLugares, codCidadeOrigem, codCidadeDestino;
+	TpData dataVoo;
+};
+
+struct TpPassagem{
+	int nrPassagem, codVoo, cpf, poltrona;
+	TpData dataCompra;
+};
+
+
+struct TpPessoas{
+	int cpf;
+	char nome[30];
+	char endereco[30];
+	TpCidade cidade;
+	char email[50];
+};
+
+struct TpPontPassagem{
+	int nrPassagem;
+	TpPontPassagem *prox;
+};
+
+struct TpPontVoo{
+	int codVoo;
+	TpPontPassagem *passagens;
+	TpPontVoo *prox;
+};
+
+struct TpPontCidade{
+	int codCidadeOrigem;
+	TpPontVoo *voos;
+	TpPontCidade *prox;
+};
+
+struct TpPessoa{
+	int cpf;
+	TpPontPessoa *prox;
+};
+
+TpPontCidade *NC_Cidade(int codCidadeOrigem){
+	TpPontCidade *nc = new TpPontCidade;
+	nc->codCidadeOrigem = codCidadeOrigem;
+	nc->prox = NULL;
+	nc->voos = NULL;
+	return nc;
+}
+
+TpPontVoo *NC_Voo(int codVoo){
+	TpPontVoo *nc = new TpPontVoo;
+	nc->codVoo = codVoo;
+	nc->passagens = NULL;
+	nc->prox = NULL;
+	return nc;
+}
+
+TpPontPassagem *NC_Passagem(int nrPassagem){
+	TpPontPassagem *nc = new TpPontPassagem;
+	nc->nrPassagem = nrPassagem;
+	nc->prox = NULL;
+	return nc;
+}
+
+TpPontPessoa *NC_Pessoa(int cpf){
+	TpPontPessoa *nc = new TpPontPessoa;
+	nc->cpf = cpf;
+	nc->prox = NULL;
+	return nc;
+}
+
+
+// inserir voo na lista de uma cidade
+TpPontCidade *inserirVoo(TpPontCidade *cidade, int codVoo){
+	TpPontVoo *novoVoo = NC_Voo(codVoo);
+	TpPontVoo *vooAtual = cidade->voos;
+	TpPontVoo *vooAnterior = NULL;
+	
+	while(vooAtual != NULL && vooAtual->codVoo < codVoo){
+		vooAnterior = vooAtual;
+		vooAtual = vooAtual->prox;
+	}
+	
+	if(vooAnterior == NULL){
+		novoVoo->prox = cidade->voos;
+		cidade->voos = novoVoo;
+	}else{
+		novoVoo->prox = vooAtual;
+		vooAnterior->prox = novoVoo;
+	}
+	
+	return cidade;
+}
+
+// inserir passagem na lista de voo
+TpPontVoo *inserirPassagem(TpPontVoo *voo, int nrPassagem){
+	TpPontPassagem *novaPassagem = NC_Passagem(nrPassagem);
+	if(voo->passagens == NULL){
+		voo->passagens = novaPassagem;
+	}else{
+		TpPontPassagem *atual = voo->passagens;
+		while(atual->prox != NULL)
+			atual = atual->prox;
+		atual->prox = novaPassagem;
+	}
+	return voo;
+}
+
+TpPontPessoa *inserirPessoa(TpPontPessoa *pessoas, int cpf){
+	TpPontPessoa *novaP = NC_Pessoa(cpf);
+	novaP->prox = pessoas;
+	return novaP;
+}
+
+// buscar cidade
+TpPontCidade *buscarCidade(TpPontCidade *Cab, int codCidadeOrigem){
+	TpPontCidade *atual = Cab;
+	while(atual != NULL && atual->codCidadeOrigem != codCidadeOrigem)
+		atual = atual->prox;
+	return atual;
+}
+
+TpPontVoo *buscarVoo(TpPontVoo *Cab, int codVoo) {
+    TpPontVoo *atual = Cab;
+    while (atual != NULL && atual->codVoo != codVoo) {
+        atual = atual->prox;
+    }
+    return atual;
+}
+
+TpPontPessoa *buscarPessoa(TpPontPessoa *pessoas, int cpf){
+	TpPont *atual = pessoas;
+	while(atual != NULL && atual->cpf != cpf)
+		atual = atual->prox;
+	return atual;
+}
+
+TpPontPessoa *carregarPessoas(const char *filename) {
+    FILE *file = fopen(filename, "rb");
+    if (!file) {
+        printf("Erro ao abrir arquivo de pessoas para leitura.\n");
+        return NULL;
+    }
+
+    TpPessoas pessoa;
+    TpPontPessoa *pessoas = NULL;
+
+    while(fread(&pessoa, sizeof(TpPessoas), 1, file)){
+        pessoas = inserirPessoa(pessoas, pessoa.cpf);
+    }
+
+    fclose(file);
+    return pessoas;
+}
+
+TpPontCidade *construirIndice(char arqVoos[], char arqPassagens[], TpPontCidade *Cidades){
+	FILE *ptrVoo = fopen(arqVoos, "rb");
+	FILE *ptrPassagens = fopen(arqPassagens, "rb");
+	
+	if (!ptrVoo || !ptrPassagens) {
+        printf("Erro ao abrir arquivos.\n");
+    }else{
+    	TpVoo voo;
+	    TpPassagem passagem;
+	    TpPontCidade *cidadeAtual;
+	    TpPontVoo *vooAtual;
+	    
+	    // ler todos os voos e construir lista de cidades e voos
+	    while(fread(&voo, sizeof(TpVoo), 1, ptrVoo)){
+	    	cidadeAtual = buscarCidade(Cidades, voo.codCidadeOrigem);
+	    	if(cidadeAtual == NULL){
+	    		cidadeAtual = NC_Cidade(voo.codCidadeOrigem);
+	    		cidadeAtual->prox = Cidades;
+	    		Cidades = cidadeAtual;
+			}
+			cidadeAtual = inserirVoo(cidadeAtual, voo.codVoo);
+		}
+		
+		// ler todas passagens e inserir nas listas de voos
+		while(fread(&passagem, sizeof(TpPassagem), 1, ptrPassagens)){
+			cidadeAtual = Cidades;
+			vooAtual = NULL;
+			while(cidadeAtual != NULL && vooAtual == NULL){
+				vooAtual = buscarVoo(cidadeAtual->voos, passagem.codVoo);
+				if(vooAtual != NULL){
+					vooAtual = inserirPassagem(vooAtual, passagem.nrPassagem);
+				}
+				cidadeAtual = cidadeAtual->prox;
+			}
+		}
+		
+		fclose(ptrVoo);
+		fclose(ptrPassagens);
+		return Cidades;	
+	}
+    
+    
+}
+
+void imprimir(TpPontCidade *cidades){
+	TpPontCidade *cidadeAtual = cidades;
+	TpPontVoo *vooAtual;
+	TpPontPassagem *passagemAtual;
+	
+	while(cidadeAtual != NULL){
+		printf("Cidade de Origem: %d\n", cidadeAtual->codCidadeOrigem);
+		vooAtual = cidadeAtual->voos;
+		while(vooAtual != NULL){
+			printf("\tVoo: %d\n", vooAtual->codVoo);
+			passagemAtual = vooAtual->passagens;
+			while(passagemAtual != NULL){
+				printf("\t\tPassagem: %d\n", passagemAtual->nrPassagem);
+                passagemAtual = passagemAtual->prox;
+			}
+			vooAtual = vooAtual->prox;
+		}
+		cidadeAtual = cidadeAtual->prox;
+	}
+}
+
+void gerarVoos(const char *filename) {
+    FILE *file = fopen(filename, "wb");
+    if (!file) {
+        printf("Erro ao abrir arquivo de voos para escrita.\n");
+        return;
+    }
+
+    TpVoo voos[] = {
+        {1, 100, 101, 201, {1, 1, 2023}},
+        {2, 150, 101, 202, {2, 1, 2023}},
+        {3, 200, 102, 201, {3, 1, 2023}},
+        {5, 100, 102, 203, {4, 1, 2023}},
+        {4, 100, 103, 203, {4, 1, 2023}},
+    };
+
+    fwrite(voos, sizeof(TpVoo), 5, file);
+    fclose(file);
+}
+
+void gerarPassagens(const char *filename) {
+    FILE *file = fopen(filename, "wb");
+    if (!file) {
+        printf("Erro ao abrir arquivo de passagens para escrita.\n");
+        return;
+    }
+
+    TpPassagem passagens[] = {
+        {1001, 1, 123456789, 1, {5, 1, 2023}},
+        {1002, 1, 987654321, 2, {6, 1, 2023}},
+        {1003, 2, 123123123, 1, {7, 1, 2023}},
+        {1004, 3, 456456456, 1, {8, 1, 2023}},
+        {1005, 4, 789789789, 1, {9, 1, 2023}},
+        {1006, 2, 111222333, 2, {10, 1, 2023}},
+        {800, 5, 789189789, 1, {8, 3, 2024}}, 
+        {700, 5, 789189789, 1, {8, 3, 2024}}, 
+    };
+
+    fwrite(passagens, sizeof(TpPassagem), 8, file); 
+    fclose(file);
+}
+
+TpPontCidade *excluirCidade(TpPontCidade *cidades, int codCidade){
+	TpPontCidade *cidadeAtual = cidades;
+	TpPontCidade *cidadeAnterior = NULL;
+	
+	while(cidadeAtual != NULL && cidadeAtual->codCidadeOrigem != codCidade){
+		cidadeAnterior = cidadeAtual;
+		cidadeAtual = cidadeAtual -> prox;
+	}
+	
+	if(cidadeAtual != NULL){
+		TpPontVoo *vooAtual = cidadeAtual->voos;
+		TpPontVoo *vooExcluir;
+		TpPontPassagem *passAtual;
+		TpPontPassagem *passExcluir;
+		
+		while(vooAtual != NULL){
+			passAtual = vooAtual->passagens;
+			while(passAtual != NULL){
+				passExcluir = passAtual;
+				passAtual = passAtual->prox;
+				delete(passExcluir);
+			}
+			vooExcluir = vooAtual;
+			vooAtual = vooAtual->prox;
+			delete(vooExcluir);
+		}
+		if(cidadeAnterior == NULL){
+			cidades = cidadeAtual->prox;
+		}else{
+			cidadeAnterior->prox = cidadeAtual->prox;
+		}
+		delete(cidadeAtual);
+	}
+	return cidades;
+}
+
+int main() {
+	TpPontCidade *cidades = NULL;
+    gerarVoos("voos.bin");
+    gerarPassagens("passagens.bin");
+    printf("Arquivos binarios gerados com sucesso.\n");
+    cidades = construirIndice("voos.bin", "passagens.bin", cidades);
+    imprimir(cidades);
+    
+    int codCidadeParaExcluir = 101;  // exemplo de código da cidade a ser excluída
+    printf("\nExcluindo cidade de origem: %d\n", codCidadeParaExcluir);
+    cidades = excluirCidade(cidades, codCidadeParaExcluir);
+    imprimir(cidades);
+    
+    return 0;
+}
+
+

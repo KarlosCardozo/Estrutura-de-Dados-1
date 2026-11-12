@@ -1,0 +1,78 @@
+/*
+
+1) (3,0 Recursividade) Faça uma função recursiva que ao receber, via parâmetro, um arquivo
+texto com vários números na base decimal, retorne-os com um novo arquivo texto os números na
+base decimal e os valores equivalente na base hexadecimal.
+
+*/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+
+// Função recursiva para converter número decimal em hexadecimal e escrever no arquivo
+void decimalParaHexadecimal(int decimal, FILE *arquivoSaida) {
+    if (decimal == 0) {
+        return;
+    }
+    
+    decimalParaHexadecimal(decimal / 16, arquivoSaida);
+
+    int resto = decimal % 16;
+    char hexChar;
+    if (resto < 10) {
+        // 0-9
+        hexChar = resto + '0';
+    } else {
+        // A-F
+        hexChar = resto - 10 + 'A';
+    }
+
+    // Escreve o caractere hexadecimal no arquivo de saída
+    fputc(hexChar, arquivoSaida);
+}
+
+int main() {
+    // Nomes fixos para os arquivos de entrada e saída
+    const char *arquivoEntradaNome = "entrada.txt";
+    const char *arquivoSaidaNome = "saida.txt";
+
+    // Abrir o arquivo de entrada
+    FILE *arquivoEntrada = fopen(arquivoEntradaNome, "r");
+    if (arquivoEntrada == NULL) {
+        perror("Erro ao abrir o arquivo de entrada");
+        return 1;
+    }
+
+    // Ler o número decimal do arquivo de entrada
+    int decimal;
+    if (fscanf(arquivoEntrada, "%d", &decimal) != 1) {
+        perror("Erro ao ler o número decimal do arquivo de entrada");
+        fclose(arquivoEntrada);
+        return 1;
+    }
+    fclose(arquivoEntrada);
+
+    // Abrir o arquivo de saída
+    FILE *arquivoSaida = fopen(arquivoSaidaNome, "w");
+    if (arquivoSaida == NULL) {
+        perror("Erro ao abrir o arquivo de saída");
+        return 1;
+    }
+
+    // Verifica se o número decimal é 0 e ajusta o resultado hexadecimal para "0"
+    if (decimal == 0) {
+        fputc('0', arquivoSaida);
+    } else {
+        // Converte decimal para hexadecimal e escreve no arquivo de saída
+        decimalParaHexadecimal(decimal, arquivoSaida);
+    }
+    fclose(arquivoSaida);
+
+    printf("Conversão concluída com sucesso. O número hexadecimal foi salvo em %s\n", arquivoSaidaNome);
+
+    return 0;
+}
+
+
+

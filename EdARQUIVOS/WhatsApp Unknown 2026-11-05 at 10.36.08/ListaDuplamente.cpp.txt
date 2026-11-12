@@ -1,0 +1,201 @@
+#include<stdio.h>
+#include<string.h>
+#include<conio.h>
+#include<windows.h>
+
+struct TpPont{
+    char Info[10];
+    TpPont *ant, *prox;
+};
+
+TpPont *NCaixa(char elemento[]){
+    TpPont *nCaixa = new TpPont;
+    strcpy(nCaixa->Info, elemento);
+    nCaixa->ant = NULL;
+    nCaixa->prox = NULL;
+    return nCaixa;
+}
+
+TpPont *inserirOrdenado(TpPont *Cab){
+    char elemento[15];
+    printf("\nElemento: ");
+    fflush(stdin);
+    gets(elemento);
+
+    while(strcmp(elemento, "0") != 0){
+        TpPont *NC = NCaixa(elemento);
+        if(Cab == NULL){
+            Cab = NC;
+        } else {
+            if(strcmp(NC->Info, Cab->Info) < 0){
+                NC->prox = Cab;
+                Cab->ant = NC;
+                Cab = NC;
+            } else {
+                TpPont *atual = Cab;
+                while(atual->prox != NULL && strcmp(NC->Info, atual->prox->Info) > 0){
+                    atual = atual->prox;
+                }
+
+                NC->prox = atual->prox;
+                if(atual->prox != NULL){
+                    atual->prox->ant = NC;
+                }
+                atual->prox = NC;
+                NC->ant = atual;
+            }
+        }
+        printf("\nElemento: ");
+        fflush(stdin);
+        gets(elemento);
+    }
+    return Cab;
+}
+
+TpPont *excluir(TpPont *Cab){
+    char elemento[15];
+
+    TpPont *excluir;
+    printf("\nElemento para excluir: ");
+    gets(elemento);
+    while(strcmp(elemento, "0") != 0){
+        TpPont *atual = Cab;
+        while(atual != NULL && strcmp(elemento, atual->Info) != 0){
+            atual = atual->prox;
+        }
+        if(atual != NULL){
+            if(atual->ant == NULL){
+                Cab = atual->prox;
+                if(Cab != NULL)
+                    Cab->ant = NULL;
+            } else {
+                atual->ant->prox = atual->prox;
+                if(atual->prox != NULL)
+                    atual->prox->ant = atual->ant;
+            }
+            delete(atual);
+        }
+        printf("\nElemento para excluir: ");
+        gets(elemento);
+    }
+
+    return Cab;
+}
+
+TpPont *excluirRecursivo(TpPont *Cab, char info[]){
+	TpPont *aux = Cab, *excluir;
+	if(aux != NULL){
+		if(strcmp(aux->Info, info) == 0){
+			excluir = aux;
+			aux = aux -> prox;
+			if(aux != NULL)
+				aux->ant = excluir->ant;
+			delete(excluir);
+			return Cab;
+		}else{
+			aux->prox = excluirRecursivo(aux->prox, info);
+		}
+	}
+	return Cab;
+}
+
+void busca(TpPont *Lista){
+    char elemento[15];
+    printf("\nElemento para buscar: ");
+    gets(elemento);
+    while(strcmp(elemento, "0") != 0){
+        while(strcmp(elemento, Lista->Info) != 0 && Lista != NULL){
+            Lista = Lista->prox;
+        }
+        if(Lista != NULL){
+            printf("\nElemento [%s] encontrado!", Lista->Info);
+        }
+        printf("\nElemento para buscar: ");
+        gets(elemento);
+    }
+    getch();
+}
+
+TpPont* merge(TpPont *Lista1, TpPont *Lista2) {
+    TpPont *Lista3 = NULL;
+    TpPont *fimLista3 = NULL;
+
+    while (Lista1 != NULL || Lista2 != NULL) {
+        TpPont *novaCaixa;
+        if (Lista1 == NULL) {
+            novaCaixa = NCaixa(Lista2->Info);
+            Lista2 = Lista2->prox;
+        } else if (Lista2 == NULL) {
+            novaCaixa = NCaixa(Lista1->Info);
+            Lista1 = Lista1->prox;
+        } else if (strcmp(Lista1->Info, Lista2->Info) < 0) {
+            novaCaixa = NCaixa(Lista1->Info);
+            Lista1 = Lista1->prox;
+        } else {
+            novaCaixa = NCaixa(Lista2->Info);
+            Lista2 = Lista2->prox;
+        }
+
+        if (Lista3 == NULL) {
+            Lista3 = novaCaixa;
+            fimLista3 = Lista3;
+        } else {
+            fimLista3->prox = novaCaixa;
+            novaCaixa->ant = fimLista3;
+            fimLista3 = novaCaixa;
+        }
+    }
+
+    return Lista3;
+}
+
+TpPont *copiar(TpPont *lista1, TpPont *lista2){
+    lista2 = lista1;
+    return lista2;
+}
+
+void imprimirIterativoCrescente(TpPont *Cab){
+    system("cls");
+    while(Cab != NULL){
+        printf("%s ", Cab->Info);
+        Cab = Cab->prox;
+    }
+    printf("\n");
+    getch();
+}
+
+void imprimirIterativoDecrescente(TpPont *Cab){
+    system("cls");
+    while(Cab->prox != NULL){
+        Cab = Cab->prox;
+    }
+    while(Cab != NULL){
+        printf("%s ", Cab->Info);
+        Cab = Cab->ant;
+    }
+    printf("\n");
+    getch();
+}
+
+int main(void){
+    TpPont *Lista = NULL;
+    printf("Inserindo na Lista 1:");
+    Lista = inserirOrdenado(Lista);
+    imprimirIterativoCrescente(Lista);
+
+    TpPont *Lista2 = NULL;
+    printf("\nInserindo na Lista 2:");
+    Lista2 = inserirOrdenado(Lista2);
+    imprimirIterativoCrescente(Lista2);
+
+    TpPont *Lista3 = merge(Lista, Lista2);
+    printf("\nLista 3 (Merge de Lista 1 e Lista 2):");
+    imprimirIterativoCrescente(Lista3);
+
+    TpPont *Lista4 = copiar(Lista3, Lista4);
+    printf("\nLista 4 (Cópia de Lista 3):");
+    imprimirIterativoCrescente(Lista4);
+
+    return 0;
+}
+

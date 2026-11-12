@@ -1,0 +1,279 @@
+/*
+
+3) (Arquivo Texto/Filas Múltiplas) Desenvolva o que se pede nos itens a) e b),
+ e também, as Estruturas de Dados Múltiplas e os módulos de acesso as Filas que o ajudarão a resolver os itens abaixo:
+
+a) Um módulo que receba os dados necessários por parâmetro e simule o acesso às filas de uma agência bancária qualquer, 
+considerando que nesta existem vários caixas (cada caixa possui a sua fila com prioridades). 
+E que possa responder qual o tempo médio que uma pessoa leva para ser atendida nessa agência e quantos atendimentos, em média, são efetuados;
+
+(2,0) Uma função que receba o caixa de interesse e o exclua da lista de caixas, lembrando que os clientes que estão nesse caixa devem ser retirados antecipadamente, ou seja, remanejados para outros caixas.
+
+Considerações:
+	1 unidade de tempo equivale a 1 minuto;
+	A Agência bancária permanece em funcionamento durante 6 horas;
+	A cada 2 unidades de tempo uma pessoa chega à Agência, ou seja, deve ser lido de um Arquivo Texto os detalhes que caracterizam esse atendimento; 
+	A Agência pode utilizar vários caixas durante alguns dias da semana e os mesmos são colocados em ordem numérica crescente iniciando de 1 (isso deve ser conhecido antes de iniciar a simulação);
+	A Agência pode ser fechada com pessoas aguardando para serem atendidas, portanto, se isso ocorrer deve-se impossibilitar a entrada de novos clientes, mas os atendimentos devem continuar ocorrendo até que a fila termine.
+	Cada pessoa atendida leva um determinado tempo para que isso ocorra (esse dado deve estar no Arquivo Texto - máximo de 20 unidades de tempo); 
+	Exemplifique a disposição dos dados em seu Arquivo Texto para simulação; 
+	• Implemente todas as funções que utilizar.
+
+*/
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<windows.h>
+#include<conio2.h>
+#include <unistd.h>
+#include <time.h> 
+
+#define diasTrabalhados 6
+#define minTrabalhados 360
+
+struct TpElemento{
+	int tempo;
+	int prioridade;
+	int tempoInicio;
+};
+
+struct TpPont{
+	TpElemento elemento;
+	TpPont *prox;
+};
+
+struct TpDesc{
+	TpPont *inicio, *fim;
+	int qtde;
+};
+
+void inicializarDesc(TpDesc &desc){
+	desc.inicio = desc.fim = NULL;
+	desc.qtde = 0;
+}
+
+TpPont *NC(TpElemento elemento){
+	TpPont *nc = new TpPont;
+	nc->elemento = elemento;
+	nc->prox = NULL;
+	return nc;
+}
+
+void inserir(TpDesc &desc, TpElemento elemento){
+	TpPont *nc = NC(elemento);
+	
+	if(desc.inicio == NULL){
+		desc.inicio = desc.fim = nc;
+	}else{
+		if(desc.inicio->elemento.prioridade > nc->elemento.prioridade){
+			nc->prox = desc.inicio;
+			desc.inicio = nc;
+		}else if(desc.fim->elemento.prioridade <= nc->elemento.prioridade){
+			desc.fim->prox = nc;
+			desc.fim = nc;
+		}else{
+			TpPont *atual = desc.inicio;
+			TpPont *anterior = NULL;
+			while(atual != NULL && atual->elemento.prioridade <= nc->elemento.prioridade){
+				anterior = atual;
+				atual = atual -> prox;
+			}
+			if(anterior != NULL){
+				anterior->prox = nc;
+				nc->prox = atual;
+			}
+		}
+	}
+	desc.qtde++;
+}
+
+void retirar(TpDesc &desc){
+	if(desc.inicio != NULL){
+		TpPont *aux = desc.inicio;
+		desc.inicio = desc.inicio->prox;
+		if(desc.inicio == NULL)
+			desc.fim = NULL;
+		delete(aux);
+		desc.qtde--;
+	}
+}
+
+int vazia(TpDesc &desc) {
+    return desc.inicio == NULL;
+}
+
+TpElemento elementoInicio(TpDesc desc){
+	return desc.inicio->elemento;
+}
+
+void gerarDados(char *nomeArquivo, int numLinhas) {
+    FILE *ptr = fopen(nomeArquivo, "w");
+    if (ptr == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return;
+    }
+
+    srand(time(NULL));
+
+    for (int i = 0; i < numLinhas; i++) {
+        int tempo = rand() % 20 + 1;    // Tempo entre 1 e 20
+        int prioridade = rand() % 3 + 1; // Prioridade entre 1 e 3
+
+        fprintf(ptr, "%d, %d\n", tempo, prioridade);
+    }
+
+    fclose(ptr);
+}
+
+int melhorEscolha(TpDesc &caixas, int qtdeCaixas){
+	int minIndex = 0;
+	int min = caixas[0].qtde;
+	
+	for(int i = 1; i < qtdeCaixas; i++){
+		if(caixas[i].qtde < min){
+			min = caixas[i].qtde;
+			minIndex = i;
+		}
+	}
+	return minIndex;
+}
+
+void exibirEstado(int time, int qtdeCaixas, TpDesc *caixas) {
+    system("cls || clear");
+    printf("Tempo: %d\n", time);
+
+    int clientesNoMomento = 0;
+    for (int i = 0; i < qtdeCaixas; i++) {
+        clientesNoMomento += caixas[i].qtde;
+        printf("Clientes atendidos no Caixa %d: %d\n", i + 1, caixas[i].qtde);
+    }
+
+    printf("Clientes no momento: %d\n", clientesNoMomento);
+ 
+
+    usleep(50000);
+}
+
+void removerCaixa(TpDesc &caixas[], int &qtdeCaixas, int caixaExcluir){
+	TpDesc caixaTemporario;
+	TpElemento cliente;
+	int choice;
+	
+	inicializarDesc(caixaExcluir);
+	
+	while(!vazia(caixa[caixaExcluir - 1])){
+		cliente = elementoInicio(caixas[caixaExcluir - 1]);
+		retirar(caixas[caixaExcluir - 1]);
+		inserir(caixaTemporario, cliente);
+	}
+	
+	for(int i = caixaExcluir - 1, i < qtdeCaixas - 1; i++){
+		caixas[i] = caixas[i + 1];
+	}
+	
+	qtdeCaixas--;
+	
+	while(!vazia(caixaTemporario)){
+		cliente = elementoInicio(caixas[caixaExcluir - 1]);
+		retirar(caixas[caixaExcluir - 1]);
+		choice = melhorEscolha(caixas, qtdeCaixas);
+		inserir(caixas[choice], cliente);
+	}
+}
+
+
+int main(void){
+	char nomeArquivo[] = "atendimento.txt";
+    gerarDados(nomeArquivo, 10000);
+    
+    FILE *ptr = fopen(nomeArquivo, "r");
+    TpElemento pessoaAtendida;
+    int qtdeCaixas, i, tempoFinalAtendimento, tempoTotalAtendimento = 0, totalClientesAtendidos = 0;
+    int choice;
+    float tempoMedio, mediaClientes;
+    
+    srand(time(NULL));
+    int time = 1;
+    int dias = 0;
+
+    printf("\nDigite a quantidade de caixas que serao utilizados: ");
+    scanf("%d", &qtdeCaixas);
+    
+    int clientesAtendidosCaixa[qtdeCaixas];
+    int clientesPorDia[diasTrabalhados];
+    TpDesc caixa[qtdeCaixas];
+    
+    for(i = 0; i < qtdeCaixas; i++){
+    	inicializarDesc(caixa[i]);
+    	clientesAtendidosCaixa[i] = 0;
+	}
+	
+	for(int i = 0; i < diasTrabalhados; i++){
+		clientesPorDia[i] = 0;
+	}
+	
+	while(dias < diasTrabalhados){
+		while(time < minTrabalhados){
+			TpElemento pessoa;
+			
+			if(time % 2 == 0){
+				if(fscanf(ptr, "%d, %d\n", &pessoa.tempo, &pessoa.prioridade) == 2){
+					choice = melhorEscolha(caixa, qtdeCaixas);
+					
+					pessoa.tempoInicio = time;
+					inserir(caixa[choice], pessoa);
+				} else {
+                    printf("\nErro na leitura da pessoa no arquivo!\n");
+                    Sleep(3);
+                }
+			}
+			
+			for(i = 0; i < qtdeCaixas; i++){
+				if(!vazia(caixa[i])){
+					pessoaAtendida = elementoInicio(caixa[i]);
+					if(time % pessoaAtendida.tempo == 0){
+						tempoFinalAtendimento = (time - pessoaAtendida.tempoInicio) + pessoaAtendida.tempo;
+						tempoTotalAtendimento += tempoFinalAtendimento;
+						
+						retirar(caixa[i]);
+						clientesAtendidosCaixa[i]++;
+						clientesPorDia[dias]++;
+					}
+				}
+			}
+			//exibirEstado(time, qtdeCaixas, caixa);
+			time++;
+		}
+		printf("\nDia %d:\n", dias);
+		for (int i = 0; i < qtdeCaixas; i++) {
+	        if (clientesAtendidosCaixa[i] > 0) {
+	            printf("Clientes atendidos no Caixa %d: %d\n", i + 1, clientesAtendidosCaixa[i]);
+	    	}
+	    }
+	    
+	    printf("Total de clientes atendidos no dia: %d\n", clientesPorDia[dias]);
+	    for (int i = 0; i < qtdeCaixas; i++) {
+	        while (!vazia(caixa[i]))
+	            retirar(caixa[i]);
+	        clientesAtendidosCaixa[i] = 0;
+	    }
+	    
+	    time = 1;
+	
+	    dias = dias + 1;
+	}
+	printf("\n\n### RELATORIO DE ATENDIMENTOS ###");
+
+    for (int i = 0; i < diasTrabalhados; i++) {
+        totalClientesAtendidos += clientesPorDia[i];
+    }
+
+    tempoMedio = (float)tempoTotalAtendimento / totalClientesAtendidos;
+    mediaClientes = (float)totalClientesAtendidos / diasTrabalhados;
+    printf("\nTempo medio de atendimento por cliente: %.2f minutos", tempoMedio);
+    printf("\nMedia de clientes atendidos por dia: %.2f clientes", mediaClientes);
+    printf("\nNumero total de clientes atendidos: %d\n", totalClientesAtendidos);
+    fclose(ptr);
+    return 0;
+	
+}

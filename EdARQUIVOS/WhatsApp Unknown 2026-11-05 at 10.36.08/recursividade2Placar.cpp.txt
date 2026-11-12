@@ -1,0 +1,39 @@
+#include <stdio.h>
+#include <string.h>
+
+// Função recursiva para gerar todas as combinações possíveis de placar
+void gerarCombinacoes(int placarJ, int placarL, char *resultado, int index) {
+    
+	// Condição de parada: quando ambos os placares são zero
+    if (placarJ == 0 && placarL == 0) {
+        resultado[index] = '\0'; // Termina a string
+        printf("%s\n", resultado);
+        return;
+    }
+
+    // Se ainda há vitórias para o Time J
+    if (placarJ > 0) {
+        resultado[index] = 'J';
+        gerarCombinacoes(placarJ - 1, placarL, resultado, index + 1);
+    }
+
+    // Se ainda há vitórias para o Time L
+    if (placarL > 0) {
+        resultado[index] = 'L';
+        gerarCombinacoes(placarJ, placarL - 1, resultado, index + 1);
+    }
+}
+
+int main() {
+    int placarJ = 3; // Placar do Time J
+    int placarL = 1; // Placar do Time L
+
+    // Array para armazenar a sequência de resultados
+    char resultado[placarJ + placarL + 1];
+
+    // Chama a função recursiva para gerar todas as combinações
+    gerarCombinacoes(placarJ, placarL, resultado, 0);
+
+    return 0;
+}
+
